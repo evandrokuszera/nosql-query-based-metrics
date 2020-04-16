@@ -1,0 +1,13 @@
+collection: products
+
+[{$match: {
+  price: {
+    $gte: '29',
+    $lte: '30'
+  }
+}}, {$project: {
+  _id: 0,
+  reorder: 0,
+  categories:0,
+  inventory:0
+}}]

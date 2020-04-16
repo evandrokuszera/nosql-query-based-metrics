@@ -1,0 +1,70 @@
+collection: orders
+
+[{$match: {
+  orderdate: {$gte: "2009-01-01", $lte: "2009-01-02"}
+}}, {$unwind: {
+  path: '$orderlines'
+}}, {$lookup: {
+  from: 'products',
+  localField: 'orderlines.prod_id',
+  foreignField: 'id_prod',
+  as: 'product'
+}}, {$addFields: {
+  'orderlines.product': {
+    $arrayElemAt: [
+      '$product',
+      0
+    ]
+  }
+}}, {$project: {
+  product: 0,
+  'orderlines.product.inventory': 0,
+  'orderlines.product.reorder': 0,
+  'orderlines.product.orderlines': 0
+}}, {$group: {
+  _id: '$id_order',
+  id_order: {
+    $first: '$id_order'
+  },
+  totalamount: {
+    $first: '$totalamount'
+  },
+  customerid: {
+    $first: '$customerid'
+  },
+  tax: {
+    $first: '$tax'
+  },
+  orderdate: {
+    $first: '$orderdate'
+  },
+  netamount: {
+    $first: '$netamount'
+  },
+  orderlines: {
+    $push: '$orderlines'
+  }
+}}, {$project: {
+  order: '$$ROOT'
+}}, {$group: {
+  _id: '$order.customerid',
+  orders: {
+    $push: '$order'
+  }
+}}, {$lookup: {
+  from: 'customers',
+  localField: 'orders.customerid',
+  foreignField: 'id_customer',
+  as: 'customer'
+}}, {$unwind: {
+  path: '$customer'
+}}, {$replaceRoot: {
+  newRoot: {
+    $mergeObjects: [
+      {
+        orders: '$orders'
+      },
+      '$customer'
+    ]
+  }
+}}]

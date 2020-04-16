@@ -1,0 +1,23 @@
+collection: customers
+
+[{$match: {
+  "orders.orderlines.orderid": "1"
+}}, {$project: {
+  _id: 0,
+  orderlines: "$orders.orderlines"
+}}, {$unwind: {
+  path: "$orderlines"
+}}, {$unwind: {
+  path: "$orderlines"
+}}, {$lookup: {
+  from: 'products',
+  localField: 'orderlines.prod_id',
+  foreignField: 'id_prod',
+  as: 'product'
+}}, {$unwind: {
+  path: "$product"
+}}, {$addFields: {
+  "orderlines.inventory": "$product.inventory"
+}}, {$replaceRoot: {
+  newRoot: "$orderlines"
+}}]

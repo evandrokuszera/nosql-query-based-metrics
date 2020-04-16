@@ -1,0 +1,5 @@
+collection: customers
+
+[{$match: {
+  id_customer: "1"
+}}]

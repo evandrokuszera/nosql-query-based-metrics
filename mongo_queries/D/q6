@@ -1,0 +1,14 @@
+collection: customers
+
+[{$match: {
+  "orders.orderdate": {$gte: '2009-01-01', $lte: '2009-01-02'}
+}}, {$unwind: {
+  path: "$orders"
+}}, {$addFields: {
+  "orders.customer": "$$ROOT"
+}}, {$replaceRoot: {
+  newRoot: "$orders"
+}}, {$project: {
+  "customer.orders":0,
+  "customer._id":0
+}}]

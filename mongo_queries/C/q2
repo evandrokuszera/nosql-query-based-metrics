@@ -1,0 +1,10 @@
+collection: products
+
+[{$match: {
+  id_prod: "1"
+}}, {$project: {
+  orderlines:0,
+  reorder:0,
+  categories:0,
+  _id:0
+}}]

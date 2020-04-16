@@ -1,0 +1,32 @@
+collection: orderlines
+
+[{$match: {
+  "orders.id_order": "1"
+}}, {$project: {
+  _id: 0,
+  id_order: "$orders.id_order",
+  totalamount: "$orders.totalamount",
+  customerid: "$orders.customerid",
+  tax: "$orders.tax",
+  orderdate: "$orders.orderdate",
+  netamount: "$orders.netamount",
+  orderline: {
+    orderlineid: "$orderlineid",
+    orderid: "$orderid",
+    prod_id: "$prod_id",
+    orderlinedate: "$orderlinedate",
+    quantity: "$quantity"
+  }
+}}, {$group: {
+  _id: "$id_order",
+  id_order: {$first: "$id_order"},
+  totalamount: {$first: "$totalamount"},
+  customerid: {$first: "$customerid"},
+  tax: {$first: "$tax"},
+  orderdate: {$first: "$orderdate"},
+  netamount: {$first: "$netamount"},
+
+    orderlines: {
+    $push: "$orderline"
+  }
+}}]

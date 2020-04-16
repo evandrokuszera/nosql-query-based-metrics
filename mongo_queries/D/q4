@@ -1,0 +1,34 @@
+collection: customers
+
+[{$match: {
+  "orders.orderdate": {
+    $gte: "2009-01-01", $lte: "2009-01-02"
+  }
+}}, {$unwind: {
+  path: "$orders"
+}}, {$unwind: {
+  path: "$orders.orderlines"
+}}, {$lookup: {
+  from: 'products',
+  localField: 'orders.orderlines.prod_id',
+  foreignField: 'id_prod',
+  as: 'orders.orderlines.product'
+}}, {$group: {
+  _id: "$orders.id_order",
+  customer: {$first: "$$ROOT"},
+  orderlines: {
+    $push: "$orders.orderlines"
+  }
+}}, {$addFields: {
+  'customer.orders.orderlines': "$orderlines"
+}}, {$group: {
+  _id: "$customer.id_customer",
+  customer: {$first: "$$ROOT"},
+  orders: {
+    $push: "$customer.orders"
+  }
+}}, {$addFields: {
+  'customer.customer.orders': '$orders'
+}}, {$replaceRoot: {
+  newRoot: "$customer.customer"
+}}]

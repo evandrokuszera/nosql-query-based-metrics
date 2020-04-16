@@ -1,0 +1,9 @@
+collection: orders
+
+[{$match: {
+  id_order: "1"
+}}, {$project: {
+  _id:0,
+  customers:0,
+  'orderlines.products':0
+}}]

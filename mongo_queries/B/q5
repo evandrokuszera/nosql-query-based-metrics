@@ -1,0 +1,25 @@
+collection: orderlines
+
+[{$match: {
+  "products.price": {$gte: "29", $lte: "30"}
+}}, {$addFields: {
+  "products.orderline": "$$ROOT"
+}}, {$replaceRoot: {
+  newRoot: "$products"
+}}, {$project: {
+  categories:0,
+  'orderline._id':0,
+  'orderline.products':0
+}}, {$group: {
+  _id: "$id_prod",
+  id_prod: {$first: "$id_prod"},
+  actor:{$first: "$actor"},
+  special:{$first: "$special"},
+  price:{$first: "$price"},
+  common_prod_id:{$first: "$common_prod_id"},
+  category:{$first: "$category"},
+  title:{$first: "$title"},
+  orderlines: {
+    $push: "$orderline"
+  }
+}}]

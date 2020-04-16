@@ -1,0 +1,9 @@
+collection: customers
+
+[{$match: {
+  "orders.id_order": "1"
+}}, {$unwind: {
+  path: "$orders"
+}}, {$replaceRoot: {
+  newRoot: "$orders"
+}}]

@@ -1,0 +1,52 @@
+collection: orderlines
+
+[{$match: {
+  'orders.orderdate': {$gte: "2009-01-01", $lte: "2009-01-02"}
+}}, {$project: {
+  orderline: '$$ROOT',
+  order: '$orders'
+}}, {$project: {
+  _id: 0,
+  'orderline.orders': 0,
+  'orderline.products.categories': 0,
+  'orderline._id': 0
+}}, {$group: {
+  _id: '$order.id_order',
+  customer: {
+    $first: '$order.customers'
+  },
+  order: {
+    $first: '$order'
+  },
+  orderlines: {
+    $push: '$orderline'
+  }
+}}, {$project: {
+  customer: 1,
+  order: {
+    id_order: '$order.id_order',
+    totalamount: '$order.totalamount',
+    customerid: '$order.customerid',
+    tax: '$order.tax',
+    orderdate: '$order.orderdate',
+    netamount: '$order.netamount',
+    orderlines: '$orderlines'
+  }
+}}, {$group: {
+  _id: '$customer.id_customer',
+  customer: {
+    $first: '$customer'
+  },
+  orders: {
+    $push: '$order'
+  }
+}}, {$replaceRoot: {
+  newRoot: {
+    $mergeObjects: [
+      {
+        orders: '$orders'
+      },
+      '$customer'
+    ]
+  }
+}}]

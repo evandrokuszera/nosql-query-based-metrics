@@ -1,0 +1,19 @@
+collection: products
+
+[{$match: {
+  "orderlines.orderid":"1"
+}}, {$unwind: {
+  path: "$orderlines"
+}}, {$match: {
+  "orderlines.orderid":"1"
+}}, {$unwind: {
+  path: "$inventory"
+}}, {$project: {
+  _id:0,
+  orderlineid : "$orderlines.orderlineid",
+  orderid: "$orderlines.orderid",
+  orderlinedate: "$orderlines.orderlinedate",
+  quantity: "$orderlines.quantity",
+  prod_id: "$orderlines.prod_id",
+  inventory:1
+}}]

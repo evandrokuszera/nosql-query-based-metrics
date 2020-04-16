@@ -1,0 +1,26 @@
+collection: orderlines
+
+[{$match: {
+  "orders.orderdate": {$gte: "2009-01-01", $lte: "2009-01-02"}
+}}, {$project: {
+  _id:0,
+  products:0
+}}, {$addFields: {
+  "orders.orderlines": {
+    orderlineid: "$orderlineid",
+    quantity:"$quantity",
+    orderlinedate:"$orderlinedate",
+    orderid:"$orderid",
+    prod_id:"$prod_id"
+  }
+}}, {$group: {
+  _id: "$orders.id_order",
+  order: {$first: "$orders"},
+  orderlines: {
+    $push: '$orders.orderlines'
+  }
+}}, {$addFields: {
+  "order.orderlines": "$orderlines"
+}}, {$replaceRoot: {
+  newRoot: "$order"
+}}]

@@ -1,0 +1,48 @@
+collection: products
+
+[{$match: {
+  price: {$gte: "29", $lte: "30"}
+}}, {$project: {
+  reorder: 0,
+  inventory: 0
+}}, {$unwind: {
+  path: '$orderlines'
+}}, {$lookup: {
+  from: 'orders',
+  localField: 'orderlines.orderid',
+  foreignField: 'id_order',
+  as: 'order'
+}}, {$addFields: {
+  'orderlines.order': {
+    $arrayElemAt: [
+      '$order',
+      0
+    ]
+  }
+}}, {$lookup: {
+  from: 'customers',
+  localField: 'orderlines.order.customerid',
+  foreignField: 'id_customer',
+  as: 'customer'
+}}, {$addFields: {
+  'orderlines.order.customer': {
+    $arrayElemAt: [
+      '$customer',
+      0
+    ]
+  }
+}}, {$project: {
+  order: 0,
+  customer: 0,
+  'orderlines.order.orderlines': 0
+}}, {$group: {
+  _id: "$id_prod",
+  product: {$first: "$$ROOT"},
+  orderlines: {
+    $push: "$orderlines"
+  }
+}}, {$addFields: {
+  'product.orderlines': "$orderlines"
+}}, {$replaceRoot: {
+  newRoot: "$product"
+}}]

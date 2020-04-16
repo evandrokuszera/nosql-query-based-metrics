@@ -1,0 +1,12 @@
+collection: orderlines
+
+[{$match: {
+  "orders.customers.id_customer": "11"
+}}, {$group: {
+  _id: "$orders.customers.id_customer",
+  customer: {
+    $first: "$orders.customers"
+  }
+}}, {$replaceRoot: {
+  newRoot: "$customer"
+}}]

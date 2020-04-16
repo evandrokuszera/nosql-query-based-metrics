@@ -1,0 +1,15 @@
+collection: orders
+
+[{$match: {
+  orderdate: {
+    $gte: '2009-01-01',
+    $lte: '2009-01-02'
+  }
+}}, {$lookup: {
+  from: 'customers',
+  localField: 'customerid',
+  foreignField: 'id_customer',
+  as: 'customer'
+}}, {$unwind: {
+  path: "$customer"
+}}]

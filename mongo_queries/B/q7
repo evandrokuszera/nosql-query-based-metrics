@@ -1,0 +1,17 @@
+collection: orderlines
+
+[{$match: {
+  orderid: "1"
+}}, {$project: {
+  _id: 0,
+  orders:0,
+  products:0
+}}, {$lookup: {
+  from: 'inventory',
+  localField: 'prod_id',
+  foreignField: 'prod_id',
+  as: 'inventory'
+}}, {$project: {
+  'inventory._id':0,
+  'inventory.products': 0
+}}]

@@ -1,0 +1,19 @@
+collection: inventory
+
+[{$match: {
+  'products.id_prod': "1"
+}}, {$project: {
+  _id: 0,
+  id_prod: "$products.id_prod",
+  title: "$products.title",
+  actor: "$products.actor",
+  price: "$products.price",
+  common_prod_id: "$products.common_prod_id",
+  special: "$products.special",
+  category: "$products.category",
+  'inventory': {
+    prod_id: "$prod_id",
+    quan_in_stock: "$quan_in_stock",
+    sales: "$sales"
+  }
+}}]

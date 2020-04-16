@@ -1,0 +1,8 @@
+collection: orders
+
+[{$match: {
+  orderdate: {$gte: '2009-01-01', $lte: '2009-01-02'}
+}}, {$project: {
+  _id:0,
+  'orderlines.products':0
+}}]

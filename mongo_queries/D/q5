@@ -1,0 +1,48 @@
+collection: products
+
+[{$match: {
+  price: {$gte: "29", $lte: "30"}
+}}, {$project: {
+  inventory:0
+}}, {$lookup: {
+  from: 'customers',
+  localField: 'id_prod',
+  foreignField: 'orders.orderlines.prod_id',
+  as: 'customers'
+}}, {$unwind: {
+  path: "$customers"
+}}, {$unwind: {
+  path: "$customers.orders"
+}}, {$unwind: {
+  path: "$customers.orders.orderlines"
+}}, {$redact: {
+  $cond: {
+    if: { $eq: [ '$id_prod', '$customers.orders.orderlines.prod_id']},
+    then: "$$DESCEND",
+    else: "$$PRUNE"  
+  }
+}}, {$addFields: {
+  orderline: "$customers.orders.orderlines"
+}}, {$addFields: {
+  'orderline.order': "$customers.orders"
+}}, {$addFields: {
+  "orderline.order.customer": "$customers"
+}}, {$project: {
+  _id:0,
+  customers:0,
+  "orderline.order.orderlines":0,
+  "orderline.order.customer.orders":0,
+  "orderline.order.customer._id":0
+}}, {$group: {
+  _id: "$id_prod",
+  id_prod:{$first: "$id_prod"},
+  actor:{$first: "$actor"},
+  special:{$first: "$special"},
+  price:{$first: "$price"},
+  common_prod_id:{$first: "$common_prod_id"},
+  category:{$first: "$category"},
+  title:{$first: "$title"},
+  orderlines: {
+    $push: "$orderline"
+  }
+}}]
