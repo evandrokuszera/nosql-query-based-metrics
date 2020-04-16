@@ -1,0 +1,18 @@
+Objetivo do Pacote:
+ - Imprimir os valores calculados pelas métricas.
+ - Apresenta uma série de classes para imprimir os resultados de cada métrica.
+ - Classe principal do pacote: CoveragePrinter
+
+Descrição as classes deste pacote:
+- CoveragePrinter
+  - faz a chamada para calcular as métricas e imprime os resutados.
+  - todas as métricas são chamadas a partir do método PrintCoverage.
+
+- Edge, Path, SubPath, IndPath, Join Coverage
+  - são classes que chamam CoveragePrinter, mas direcionadas a imprimir os resultados de um tipo de métrica.
+
+ - Layout da Impressão do Resultado das Métricas
+  - está encapsulado na classe PrintCoverage.
+
+ - Definição das Métricas
+  - estão no pacote metrics.coverage.

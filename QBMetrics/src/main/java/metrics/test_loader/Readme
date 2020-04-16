@@ -1,0 +1,16 @@
+Objetivo da classe AbstractTestInputLoader.java
+ - Facilitar o carregamento dos dados de teste e impressão da cobertura e valor das métricas.
+
+
+Para criar um teste, você deve estender esta classe e implementar os métodos load...().
+ - carregar os esquemas
+ - carregar as consultas
+
+Depois, crie um método MAIN e chame os métodos:
+ - instancie a classe de teste;
+ - essa classe fornece os objetos
+ - - coveragePrinter()
+ - - schemaPrinter()
+
+Escolha a forma de impressão para visualizar a cobertura e valores calculados para as métricas.
+ 
