@@ -8,7 +8,7 @@ schema (document structures), prior database conversion and migration. The tool 
 
 To execute the test scenarios run the tool and access the "Demo" menu. The first scenario show the results of CAiSE 20 article, where four NoSQL schemas (A-D) are evaluated and compare through a set of queries (seven queries). The second one show the an experiment using only three schemas and queries. Another way is to execute the class run_CAiSE20, located in test package.
 
-To run the test scenarios, run the tool and access the "Demo" menu. The first scenario shows the experiment results of the CAiSE 20 article, in which four NoSQL schemas (A-D) are evaluated and compared through a set of queries (seven queries). The second shows the experiment using only three schemas and queries. Another way is to directly run the class run_CAiSE20, located in the test package.
+To run the test scenarios, run the tool and access the "Demo" menu. The first scenario shows the experiment results of the CAiSE 20 article, in which four NoSQL schemas (A-D) are evaluated and compared through a set of queries (seven queries). The second shows the experiment using only three schemas and queries. Another way is to directly run the class run_CAiSE20, located in the test package, to see the results on the console.
 
 QBMetrics calculates the metrics over schemas and queries. The user can use the results to decide how schema is most appropriate for the application's requirements.
 
