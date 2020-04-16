@@ -1,4 +1,4 @@
-# RDB To NoSQL - Query-Based Metrics
+# Query-Based Metrics
 Query-based metrics for evaluating and comparing NoSQL document schemas (document structure) against a set o queries
 
 # QBMetrics
