@@ -1,5 +1,11 @@
 # NoSQL Query-Based Metrics
-Query-based metrics for evaluating and comparing NoSQL document schemas (document structure) against a set o queries
+Query-based metrics for evaluating and comparing NoSQL document schemas (document structure) against a set o queries.
+
+More information can be found in:
+ - Query-Based Metrics for Evaluating and Comparing Document Schemas. CAiSE 2020: 530-545
+   - https://www.youtube.com/watch?v=AjzoiP62n3Q&t=488s
+ - QBMetrics: A Tool for Evaluating and Comparing Document Schemas. CAiSE Forum 2020: 77-85
+   - https://www.youtube.com/watch?v=jw0jlnC6ywo&t=10s 
 
 # QBMetrics
 
