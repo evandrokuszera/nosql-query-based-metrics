@@ -6,6 +6,7 @@
 package dag.gui;
 
 import dag.model.RelationshipEdge;
+import dag.model.TableColumnVertex;
 import dag.model.TableVertex;
 import dag.nosql_schema.NoSQLSchema;
 import dag.utils.GraphUtils;
@@ -14,6 +15,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -38,6 +40,7 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
     private DatabaseMetaData rdb_metadata;
     private DefaultListModel<String> lstModel_RDBTables = new DefaultListModel<>();
     private DefaultListModel lstModel_DAGVertexs = new DefaultListModel();
+    private DefaultListModel lstModel_SelectedColumns = new DefaultListModel();
     private DefaultTableModel tblModel_DAGEdges = new DefaultTableModel();
     private ArrayList<RelationshipEdge> edgesArray = new ArrayList<>(); // estou usando este array para controlar o processo de exclusão das arestas no tabela
     private boolean cancel = true;
@@ -54,6 +57,7 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
 
         lstRDBTables.setModel(lstModel_RDBTables);
         lstDAGVertexs.setModel(lstModel_DAGVertexs);
+        lstSelectedColumns.setModel(lstModel_SelectedColumns);
         tblModel_DAGEdges = (DefaultTableModel) this.tblEdges.getModel();
         tblCollectionMetricsModelTable = (DefaultTableModel) this.tblCollectionMetric.getModel();
 
@@ -158,12 +162,14 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
     // Os campos da table_name são extraídos dos metadados do RDB.
     protected TableVertex createVertexFromRDBMetadata(String table_name) throws SQLException {
         ResultSet rsPrimaryKeys = rdb_metadata.getPrimaryKeys("", "", table_name);
+        HashMap<String,String> primaryKeysMap = new HashMap();
 
         // Obs.: estou considerando somente PKs simples. Suporte a PKs compostas não foi implementado.
         // Recuperando a chave primária da table_name.
         String primaryKeyName = "";
         while (rsPrimaryKeys.next()) {
             primaryKeyName = rsPrimaryKeys.getString("COLUMN_NAME");
+            primaryKeysMap.put(rsPrimaryKeys.getString("COLUMN_NAME"), "pk");
         }
         rsPrimaryKeys.close();
 
@@ -173,24 +179,56 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
         ResultSet rsTableFields = rdb_metadata.getColumns("", "", table_name, "");
         while (rsTableFields.next()) {
             newTableVertex.getFields().add(rsTableFields.getString("COLUMN_NAME"));
+            
+            TableColumnVertex columnFromTable = new TableColumnVertex();
+            columnFromTable.setColumnName(rsTableFields.getString("COLUMN_NAME"));
+            columnFromTable.setColumnType(rsTableFields.getString("TYPE_NAME"));
+            if (primaryKeysMap.get(rsTableFields.getString("COLUMN_NAME")) != null){
+                columnFromTable.setPk(true);
+            }
+            newTableVertex.getTypeFields().add(columnFromTable);
+            
         }
         rsTableFields.close();
+        
+//        ResultSet rsForeignKeys = rdb_metadata.getImportedKeys("", "", table_name);
+//        System.out.println("TABELA: " + table_name);
+//        while (rsForeignKeys.next()) {
+//            System.out.println(rsForeignKeys.getString(1));
+//            System.out.println(rsForeignKeys.getString(2));
+//            System.out.println(rsForeignKeys.getString(3));
+//            System.out.println(rsForeignKeys.getString(4));
+//            System.out.println(rsForeignKeys.getString(5));
+//            System.out.println(rsForeignKeys.getString(6));
+//            System.out.println(rsForeignKeys.getString(7));
+//            System.out.println(rsForeignKeys.getString(8));
+//            System.out.println(rsForeignKeys.getString(9));
+//            System.out.println(rsForeignKeys.getString(10));
+//            System.out.println(rsForeignKeys.getString(11));
+//            System.out.println(rsForeignKeys.getString(12));
+//            System.out.println(rsForeignKeys.getString(13));
+//            System.out.println(rsForeignKeys.getString(14));
+//        }
+//        rsForeignKeys.close();
 
         return newTableVertex;
     }
 
     private RelationshipEdge createEdgeFromRDBMetadata(String source, String target) {
         RelationshipEdge edge = null;
+        String referenceType = null;
         try {
             ResultSet rs1 = rdb_metadata.getCrossReference("", "", target, "", "", source);
             while (rs1.next()) {
-                edge = new RelationshipEdge("many_embedded", rs1.getString("PKTABLE_NAME"), rs1.getString("FKTABLE_NAME"), rs1.getString("PKCOLUMN_NAME"), rs1.getString("FKCOLUMN_NAME"));
+                referenceType = radioReference.isSelected() ? "ref_many_to_one" : "embed_many_to_one";
+                edge = new RelationshipEdge(referenceType, rs1.getString("PKTABLE_NAME"), rs1.getString("FKTABLE_NAME"), rs1.getString("PKCOLUMN_NAME"), rs1.getString("FKCOLUMN_NAME"));
             }
             rs1.close();
 
             ResultSet rs2 = rdb_metadata.getCrossReference("", "", source, "", "", target);
             while (rs2.next()) {
-                edge = new RelationshipEdge("one_embedded", rs2.getString("PKTABLE_NAME"), rs2.getString("FKTABLE_NAME"), rs2.getString("PKCOLUMN_NAME"), rs2.getString("FKCOLUMN_NAME"));
+                referenceType = radioReference.isSelected() ? "ref_one_to_many" : "embed_one_to_many";
+                edge = new RelationshipEdge(referenceType, rs2.getString("PKTABLE_NAME"), rs2.getString("FKTABLE_NAME"), rs2.getString("PKCOLUMN_NAME"), rs2.getString("FKCOLUMN_NAME"));
             }
             rs2.close();
         } catch (SQLException ex) {
@@ -208,6 +246,14 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
             lstModel_RDBTables.addElement(rs.getString("TABLE_NAME"));
         }
         rs.close();
+    }
+    
+    private void loadColumnsFromVertex(TableVertex tableVertex){
+        lstModel_SelectedColumns.clear();
+        
+        for (TableColumnVertex column : tableVertex.getTypeFields()){
+            lstModel_SelectedColumns.addElement(column);
+        }
     }
 
     private void clearAllComponents() {
@@ -256,6 +302,7 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        buttonGroup1 = new javax.swing.ButtonGroup();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         lstRDBTables = new javax.swing.JList<>();
@@ -268,6 +315,9 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
         btnRemVertex = new javax.swing.JButton();
         btnRemAllVertex = new javax.swing.JButton();
         btnRemAllVertex1 = new javax.swing.JButton();
+        jScrollPane5 = new javax.swing.JScrollPane();
+        lstSelectedColumns = new javax.swing.JList<>();
+        jLabel1 = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         cmbSourceVertex = new javax.swing.JComboBox();
@@ -279,6 +329,8 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
         chkAllowAllVertices = new javax.swing.JCheckBox();
         btnExportDAG = new javax.swing.JButton();
         btnVisualizingDAG = new javax.swing.JButton();
+        radioEmbed = new javax.swing.JRadioButton();
+        radioReference = new javax.swing.JRadioButton();
         btnOk = new javax.swing.JButton();
         btnCancelar = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
@@ -310,6 +362,11 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
             String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
             public int getSize() { return strings.length; }
             public String getElementAt(int i) { return strings[i]; }
+        });
+        lstDAGVertexs.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                lstDAGVertexsMouseClicked(evt);
+            }
         });
         jScrollPane2.setViewportView(lstDAGVertexs);
 
@@ -349,6 +406,20 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
             }
         });
 
+        lstSelectedColumns.setModel(new javax.swing.AbstractListModel<String>() {
+            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
+            public int getSize() { return strings.length; }
+            public String getElementAt(int i) { return strings[i]; }
+        });
+        lstSelectedColumns.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                lstSelectedColumnsKeyPressed(evt);
+            }
+        });
+        jScrollPane5.setViewportView(lstSelectedColumns);
+
+        jLabel1.setText("Selected columns:");
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -358,8 +429,8 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel2)
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 219, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(btnAddAllVertex, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
@@ -367,11 +438,15 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
                                 .addComponent(btnRemAllVertex1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(btnAddVertex, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(btnRemVertex, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                .addGap(10, 10, 10)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel3))
-                .addContainerGap(11, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1)
+                    .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jPanel2Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {btnAddAllVertex, btnAddVertex, btnRemAllVertex, btnRemAllVertex1, btnRemVertex});
@@ -381,13 +456,11 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(jLabel3))
+                    .addComponent(jLabel3)
+                    .addComponent(jLabel1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 139, javax.swing.GroupLayout.PREFERRED_SIZE))
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(20, 20, 20)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jScrollPane2)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 139, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(btnAddVertex)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -397,7 +470,10 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnRemAllVertex)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnRemAllVertex1))))
+                        .addComponent(btnRemAllVertex1))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 139, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 139, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Step 2: Add edges (relationships)"));
@@ -467,6 +543,13 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
             }
         });
 
+        buttonGroup1.add(radioEmbed);
+        radioEmbed.setSelected(true);
+        radioEmbed.setText("Embed");
+
+        buttonGroup1.add(radioReference);
+        radioReference.setText("Reference");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -475,45 +558,55 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 611, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(btnVisualizingDAG, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(btnExportDAG)
+                            .addComponent(btnAddEdge, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel4)
-                            .addComponent(cmbSourceVertex, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 24, Short.MAX_VALUE)
+                            .addComponent(jLabel5))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(cmbSourceVertex, 0, 228, Short.MAX_VALUE)
+                            .addComponent(cmbTargetVertex, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(18, 18, 18)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel5)
-                                .addGap(48, 48, 48)
-                                .addComponent(chkAllowAllVertices))
-                            .addComponent(cmbTargetVertex, javax.swing.GroupLayout.PREFERRED_SIZE, 226, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(jScrollPane3))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnAddEdge, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(btnExportDAG, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnVisualizingDAG, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap())
+                                .addComponent(chkAllowAllVertices)
+                                .addGap(0, 0, Short.MAX_VALUE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(radioEmbed)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(radioReference)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel4)
-                    .addComponent(jLabel5)
-                    .addComponent(chkAllowAllVertices))
+                    .addComponent(chkAllowAllVertices)
+                    .addComponent(cmbSourceVertex, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(cmbSourceVertex, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel5)
                     .addComponent(cmbTargetVertex, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnAddEdge))
+                    .addComponent(radioEmbed)
+                    .addComponent(radioReference))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(btnAddEdge)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(btnExportDAG)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btnVisualizingDAG))
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(115, 115, 115))
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(122, 122, 122))
         );
 
         btnOk.setIcon(new javax.swing.ImageIcon(getClass().getResource("/ok.png"))); // NOI18N
@@ -563,7 +656,7 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane4)
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 714, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
@@ -578,21 +671,14 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap())
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnOk)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(btnCancelar)
-                .addGap(28, 28, 28))
+                        .addComponent(btnOk)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnCancelar))
+                    .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {btnCancelar, btnOk});
@@ -600,7 +686,7 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(6, 6, 6)
+                .addContainerGap()
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -792,6 +878,35 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
 
     }//GEN-LAST:event_tblEdgesMouseClicked
 
+    private void lstDAGVertexsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lstDAGVertexsMouseClicked
+        if (lstDAGVertexs.getSelectedIndex() != -1){
+            TableVertex tableVertex = (TableVertex) this.lstModel_DAGVertexs.get(lstDAGVertexs.getSelectedIndex());
+            loadColumnsFromVertex(tableVertex);
+        }
+    }//GEN-LAST:event_lstDAGVertexsMouseClicked
+
+    private void lstSelectedColumnsKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_lstSelectedColumnsKeyPressed
+        if (evt.getKeyCode() != 127){ // tecla delete
+            return;
+        }
+        
+        while (lstSelectedColumns.getSelectedIndices().length > 0){
+            
+            TableColumnVertex columnFromList = (TableColumnVertex) lstModel_SelectedColumns.get(lstSelectedColumns.getSelectedIndices()[0]);
+            
+            if (columnFromList.isPk()){
+                JOptionPane.showMessageDialog(this, "It is not possible to remove a PK field. Action canceled!");
+                return;
+            }
+            
+            if (lstDAGVertexs.getSelectedIndex() != -1){
+                TableVertex tableVertex = (TableVertex) this.lstModel_DAGVertexs.get(lstDAGVertexs.getSelectedIndex());
+                tableVertex.removeField(columnFromList.getColumnName());
+                lstModel_SelectedColumns.removeElement(columnFromList);
+            }
+        }
+    }//GEN-LAST:event_lstSelectedColumnsKeyPressed
+
     /**
      * @param args the command line arguments
      */
@@ -848,9 +963,11 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
     private javax.swing.JButton btnRemAllVertex1;
     private javax.swing.JButton btnRemVertex;
     private javax.swing.JButton btnVisualizingDAG;
+    private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JCheckBox chkAllowAllVertices;
     private javax.swing.JComboBox cmbSourceVertex;
     private javax.swing.JComboBox cmbTargetVertex;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -862,8 +979,12 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
+    private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JList<String> lstDAGVertexs;
     private javax.swing.JList<String> lstRDBTables;
+    private javax.swing.JList<String> lstSelectedColumns;
+    private javax.swing.JRadioButton radioEmbed;
+    private javax.swing.JRadioButton radioReference;
     private javax.swing.JTable tblCollectionMetric;
     private javax.swing.JTable tblEdges;
     // End of variables declaration//GEN-END:variables

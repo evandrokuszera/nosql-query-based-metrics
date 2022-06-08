@@ -50,14 +50,14 @@ public class DAGtoJSONSchema {
                     }
                     
                     // Identifica o tipo de aresta do grafo, ou seja, qual é o tipo de aninhamento entre leaf e successor.
-                    if (edge.getTypeofNesting().equalsIgnoreCase("many_embedded")){
+                    if (edge.getTypeofNesting().equalsIgnoreCase("embed_many_to_one")){
                         // aninhamento como array: successor recebe leaf como array de objeto.
                         JSONObject arrayType = new JSONObject();        
                         arrayType.put("type", "array");
                         arrayType.put("$id", leafVertex.getName());
                         arrayType.put("items", leafVertex.getJsonSchema());
                         successorVertex.getJsonSchema().getJSONObject("properties").put(leafVertex.getName(), arrayType);                        
-                    } else if (edge.getTypeofNesting().equalsIgnoreCase("one_embedded")) {
+                    } else if (edge.getTypeofNesting().equalsIgnoreCase("embed_one_to_many")) {
                         // aninhamento como objeto: successor recebe leaf como objeto.
                         successorVertex.getJsonSchema().getJSONObject("properties").put(leafVertex.getName(), leafVertex.getJsonSchema());
                     }

@@ -194,7 +194,7 @@ public class Metrics {
                 
                 // Para aresta de saída do vertex...
                 for (RelationshipEdge edge : collection.outgoingEdgesOf(vertex)){
-                    if (edge.getTypeofNesting().equalsIgnoreCase("many_embedded")){
+                    if (edge.getTypeofNesting().equalsIgnoreCase("embed_many_to_one")){
                         listOfArrays.add(vertex.getName());
                     }
                 }         

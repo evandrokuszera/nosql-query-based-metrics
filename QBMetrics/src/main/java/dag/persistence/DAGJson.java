@@ -6,6 +6,7 @@
 package dag.persistence;
 
 import dag.model.RelationshipEdge;
+import dag.model.TableColumnVertex;
 import dag.model.TableVertex;
 import static dag.utils.GraphUtils.getTableVertexByName;
 import org.jgrapht.graph.DirectedAcyclicGraph;
@@ -39,6 +40,16 @@ public class DAGJson {
                 vertex.getJSONArray("fields").put(field);
             }
             
+            // Creating array of fields of vertex
+            vertex.put("typedFields", new JSONArray());            
+            for (TableColumnVertex typedField : tVertex.getTypeFields()){
+                JSONObject type = new JSONObject();
+                type.put("name", typedField.getColumnName());
+                type.put("type", typedField.getColumnType());
+                type.put("pk", typedField.isPk());
+                vertex.getJSONArray("typedFields").put(type);
+            }
+            
             dagJSON.getJSONArray("vertices").put(vertex);
         }
         
@@ -51,6 +62,7 @@ public class DAGJson {
             edge.put("fk_many_side", rEdge.getFkManySide());  
             edge.put("source", rEdge.getSource().getName());
             edge.put("target", rEdge.getTarget().getName());
+            edge.put("type", rEdge.getTypeofNesting());
                     
             dagJSON.getJSONArray("edges").put(edge);
         }
@@ -72,7 +84,20 @@ public class DAGJson {
             // Cria os field do TableVertex...
             for (int j=0; j<vertex.getJSONArray("fields").length(); j++){
                 tVertex.getFields().add(vertex.getJSONArray("fields").getString(j));
-            }            
+            } 
+            
+            if (!vertex.isNull("typedFields")){
+               // Cria os typedFields do TableVertex...
+                for (int j=0; j<vertex.getJSONArray("typedFields").length(); j++){
+                    String columnName = vertex.getJSONArray("typedFields").getJSONObject(j).getString("name");
+                    String columnType = vertex.getJSONArray("typedFields").getJSONObject(j).getString("type");
+                    boolean isPk = vertex.getJSONArray("typedFields").getJSONObject(j).getBoolean("pk");
+                    tVertex.getTypeFields().add(new TableColumnVertex(columnName, columnType, isPk));
+                } 
+            } else {
+                System.out.println("CAMPO NÃO CARREGADO: typedFields não foi encontrado no arquivo JSON.");
+            }
+                
             // Adiciona o vértice no DAG...
             dag.addVertex(tVertex);
         }
@@ -80,7 +105,8 @@ public class DAGJson {
         // Percorre arquivo json e cria as arestas do DAG.
         for (int i=0; i<jsonDAG.getJSONArray("edges").length(); i++){
             JSONObject edge = jsonDAG.getJSONArray("edges").getJSONObject(i);
-            RelationshipEdge rEdge = new RelationshipEdge(edge.getString("one_side_entity"), edge.getString("many_side_entity"), edge.getString("pk_one_side"), edge.getString("fk_many_side"));
+            //RelationshipEdge rEdge = new RelationshipEdge(edge.getString("one_side_entity"), edge.getString("many_side_entity"), edge.getString("pk_one_side"), edge.getString("fk_many_side"));
+            RelationshipEdge rEdge = new RelationshipEdge(edge.getString("type"), edge.getString("one_side_entity"), edge.getString("many_side_entity"), edge.getString("pk_one_side"), edge.getString("fk_many_side"));
             
             // Adiciona a aresta no DAG...            
             dag.addEdge(

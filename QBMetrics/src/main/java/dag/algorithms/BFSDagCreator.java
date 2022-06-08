@@ -75,7 +75,7 @@ public class BFSDagCreator extends DagCreator {
                     // Adicionando vertex no grafo.
                     graph.addVertex(sourceVertex);
                     // Criando aresta para conectar sourceVertex para TargetVertex
-                    RelationshipEdge edge = new RelationshipEdge("many_embedded", rs.getString("PKTABLE_NAME"), rs.getString("FKTABLE_NAME"), rs.getString("PKCOLUMN_NAME"), rs.getString("FKCOLUMN_NAME"));
+                    RelationshipEdge edge = new RelationshipEdge("embed_many_to_one", rs.getString("PKTABLE_NAME"), rs.getString("FKTABLE_NAME"), rs.getString("PKCOLUMN_NAME"), rs.getString("FKCOLUMN_NAME"));
                     // Adicionando aresta no grafo (sourceVertex --> targetVertex)
                     graph.addEdge(sourceVertex, targetVertex, edge);
                     //System.out.println("getExportedKeys: "+rs.getString("PKTABLE_NAME") +", "+ rs.getString("PKCOLUMN_NAME") + ", "+rs.getString("FKTABLE_NAME") +", "+ rs.getString("FKCOLUMN_NAME"));                        
@@ -95,7 +95,7 @@ public class BFSDagCreator extends DagCreator {
                     // Adicionando vertex no grafo.
                     graph.addVertex(sourceVertex);
                     // Criando aresta para conectar sourceVertex para TargetVertex
-                    RelationshipEdge edge = new RelationshipEdge("one_embedded", rs.getString("PKTABLE_NAME"), rs.getString("FKTABLE_NAME"), rs.getString("PKCOLUMN_NAME"), rs.getString("FKCOLUMN_NAME"));
+                    RelationshipEdge edge = new RelationshipEdge("embed_one_to_many", rs.getString("PKTABLE_NAME"), rs.getString("FKTABLE_NAME"), rs.getString("PKCOLUMN_NAME"), rs.getString("FKCOLUMN_NAME"));
                     // Adicionando aresta no grafo (sourceVertex --> targetVertex)
                     graph.addEdge(sourceVertex, targetVertex, edge);
                     //System.out.println("getImportedKeys: "+rs.getString("PKTABLE_NAME") +", "+ rs.getString("PKCOLUMN_NAME") + ", "+rs.getString("FKTABLE_NAME") +", "+ rs.getString("FKCOLUMN_NAME"));            

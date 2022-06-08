@@ -53,10 +53,10 @@ public class RelationshipEdge extends DefaultEdge implements Serializable {
         if (typeofNesting == null){
             // se o vértice source da aresta for a entidade 'oneSideEntity', então o aninhamento é one_embedding.
             if (getSource().getTableName().equalsIgnoreCase(oneSideEntity)){
-                typeofNesting = "one_embedded";
+                typeofNesting = "embed_one_to_many";
             // se o vértice source da aresta for a entidade 'manySideEntity', então o aninhamento é many_embedding.
             } else if (getSource().getTableName().equalsIgnoreCase(manySideEntity)){
-                typeofNesting = "many_embedded";
+                typeofNesting = "embed_many_to_one";
             }            
         }
         return typeofNesting;
@@ -123,7 +123,7 @@ public class RelationshipEdge extends DefaultEdge implements Serializable {
         // Alterei este método para melhor visualização no DAG (interface gráfica).
         String msg = "";
         if (typeofNesting != null) {
-            if (typeofNesting.equalsIgnoreCase("one_embedded")){
+            if (typeofNesting.equalsIgnoreCase("embed_one_to_many")){
                 msg = "obj";
             } else {
                 msg = "array";

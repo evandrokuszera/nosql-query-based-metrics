@@ -27,8 +27,6 @@ import org.json.JSONObject;
 import dag.persistence.DAGJson;
 import dag.persistence.NoSQLSchemaJson;
 import java.net.URISyntaxException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *

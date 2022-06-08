@@ -21,12 +21,50 @@ public class TableVertex implements Serializable {
     private String pk;
     private ArrayList<String> fields;
     private JSONObject jsonSchema;
+    
+    private ArrayList<TableColumnVertex> typeFields;
+    private String entityClassName;
+
+    public ArrayList<TableColumnVertex> getTypeFields() {
+        return typeFields;
+    }
+
+    public void setTypeFields(ArrayList<TableColumnVertex> typeFields) {
+        this.typeFields = typeFields;
+    }
+
+    public String getEntityClassName() {
+        return entityClassName;
+    }
+
+    public void setEntityClassName(String entityClassName) {
+        this.entityClassName = entityClassName;
+    }
+    // remove field from fields and typeFields collections
+    public void removeField(String fieldName){
+        
+        for (String field : fields){
+            if (field.equals(fieldName)){
+                fields.remove(field);
+                break;
+            }
+        }
+        
+        for (TableColumnVertex columnField : typeFields){
+            if (columnField.getColumnName().equals(fieldName)){
+                typeFields.remove(columnField);
+                break;
+            }
+        }
+        
+    }
 
     public TableVertex(String name, String tableName, String pk) {
         this.name = name;
         this.tableName = tableName;
         this.pk = pk;
         this.fields = new ArrayList<>();
+        this.typeFields = new ArrayList<>();
         this.id = ++tableVertexCount;
     }
 
