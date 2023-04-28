@@ -11,13 +11,15 @@ package dag.model;
  */
 public class TableColumnVertex {
     private boolean pk;
+    private boolean fk;
     private String columnName;
     private String columnType;
 
     public TableColumnVertex() { }
     
-    public TableColumnVertex(String columnName, String columnType, boolean isPk) {
+    public TableColumnVertex(String columnName, String columnType, boolean isPk, boolean isFk) {
         this.pk = isPk;
+        this.fk = isFk;
         this.columnName = columnName;
         this.columnType = columnType;
     }
@@ -46,6 +48,14 @@ public class TableColumnVertex {
         this.pk = pk;
     }
 
+    public void setFk(boolean fk) {
+        this.fk = fk;
+    }
+
+    public boolean isFk() {
+        return fk;
+    }
+    
     @Override
     public String toString() {
         return columnName + " (" + columnType + ")" + (isPk() ? " - PK" : "");

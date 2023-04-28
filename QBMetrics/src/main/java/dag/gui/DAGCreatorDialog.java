@@ -6,6 +6,7 @@
 package dag.gui;
 
 import dag.model.RelationshipEdge;
+import dag.model.RelationshipEdgeType;
 import dag.model.TableColumnVertex;
 import dag.model.TableVertex;
 import dag.nosql_schema.NoSQLSchema;
@@ -162,16 +163,26 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
     // Os campos da table_name são extraídos dos metadados do RDB.
     protected TableVertex createVertexFromRDBMetadata(String table_name) throws SQLException {
         ResultSet rsPrimaryKeys = rdb_metadata.getPrimaryKeys("", "", table_name);
-        HashMap<String,String> primaryKeysMap = new HashMap();
+        ResultSet rsForeingKeys = rdb_metadata.getImportedKeys("", "", table_name);
+     
+        HashMap<String,String> pkMap =  new HashMap();
+        HashMap<String,String> fkMap = new HashMap();
 
         // Obs.: estou considerando somente PKs simples. Suporte a PKs compostas não foi implementado.
-        // Recuperando a chave primária da table_name.
+        // Recuperando a chave primária da table_name e adicionando no primaryKeysMap.
         String primaryKeyName = "";
         while (rsPrimaryKeys.next()) {
             primaryKeyName = rsPrimaryKeys.getString("COLUMN_NAME");
-            primaryKeysMap.put(rsPrimaryKeys.getString("COLUMN_NAME"), "pk");
+            pkMap.put(rsPrimaryKeys.getString("COLUMN_NAME"), "pk");
         }
         rsPrimaryKeys.close();
+        
+        String foreignKeyName = "";
+        while (rsForeingKeys.next()) {
+            foreignKeyName = rsForeingKeys.getString("FKCOLUMN_NAME");
+            fkMap.put(rsForeingKeys.getString("FKCOLUMN_NAME"), "fk");
+        }
+        rsForeingKeys.close();
 
         // Criando novo vertex com base nos dados da tabela RDB.
         TableVertex newTableVertex = new TableVertex(table_name, table_name, primaryKeyName);
@@ -183,31 +194,35 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
             TableColumnVertex columnFromTable = new TableColumnVertex();
             columnFromTable.setColumnName(rsTableFields.getString("COLUMN_NAME"));
             columnFromTable.setColumnType(rsTableFields.getString("TYPE_NAME"));
-            if (primaryKeysMap.get(rsTableFields.getString("COLUMN_NAME")) != null){
+            if ( pkMap.get(rsTableFields.getString("COLUMN_NAME")) != null ){
                 columnFromTable.setPk(true);
+            }
+            if ( fkMap.get(rsTableFields.getString("COLUMN_NAME")) != null ){
+                columnFromTable.setFk(true);
             }
             newTableVertex.getTypeFields().add(columnFromTable);
             
         }
         rsTableFields.close();
         
+//        // Descobrindo o significado dos campos do resultset de metadados.
 //        ResultSet rsForeignKeys = rdb_metadata.getImportedKeys("", "", table_name);
 //        System.out.println("TABELA: " + table_name);
 //        while (rsForeignKeys.next()) {
-//            System.out.println(rsForeignKeys.getString(1));
-//            System.out.println(rsForeignKeys.getString(2));
-//            System.out.println(rsForeignKeys.getString(3));
-//            System.out.println(rsForeignKeys.getString(4));
-//            System.out.println(rsForeignKeys.getString(5));
-//            System.out.println(rsForeignKeys.getString(6));
-//            System.out.println(rsForeignKeys.getString(7));
-//            System.out.println(rsForeignKeys.getString(8));
-//            System.out.println(rsForeignKeys.getString(9));
-//            System.out.println(rsForeignKeys.getString(10));
-//            System.out.println(rsForeignKeys.getString(11));
-//            System.out.println(rsForeignKeys.getString(12));
-//            System.out.println(rsForeignKeys.getString(13));
-//            System.out.println(rsForeignKeys.getString(14));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(1), rsForeignKeys.getMetaData().getColumnLabel(1));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(2), rsForeignKeys.getMetaData().getColumnLabel(2));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(3), rsForeignKeys.getMetaData().getColumnLabel(3));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(4), rsForeignKeys.getMetaData().getColumnLabel(4));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(5), rsForeignKeys.getMetaData().getColumnLabel(5));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(6), rsForeignKeys.getMetaData().getColumnLabel(6));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(7), rsForeignKeys.getMetaData().getColumnLabel(7));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(8), rsForeignKeys.getMetaData().getColumnLabel(8));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(9), rsForeignKeys.getMetaData().getColumnLabel(9));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(10), rsForeignKeys.getMetaData().getColumnLabel(10));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(11), rsForeignKeys.getMetaData().getColumnLabel(11));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(12), rsForeignKeys.getMetaData().getColumnLabel(12));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(13), rsForeignKeys.getMetaData().getColumnLabel(13));
+//            System.out.printf("%s : %s\n", rsForeignKeys.getString(14), rsForeignKeys.getMetaData().getColumnLabel(14));
 //        }
 //        rsForeignKeys.close();
 
@@ -546,6 +561,11 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
         buttonGroup1.add(radioEmbed);
         radioEmbed.setSelected(true);
         radioEmbed.setText("Embed");
+        radioEmbed.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                radioEmbedActionPerformed(evt);
+            }
+        });
 
         buttonGroup1.add(radioReference);
         radioReference.setText("Reference");
@@ -794,11 +814,11 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
 
         if (cmbSourceVertex.getSelectedIndex() != -1 && cmbTargetVertex.getSelectedIndex() != -1) {
             // adição manual da aresta...
+            TableVertex source = (TableVertex) cmbSourceVertex.getSelectedItem();
+            TableVertex target = (TableVertex) cmbTargetVertex.getSelectedItem();
+            RelationshipEdge edge = null;
             if (chkAllowAllVertices.isSelected()) {
-                
-                TableVertex source = (TableVertex) cmbSourceVertex.getSelectedItem();
-                TableVertex target = (TableVertex) cmbTargetVertex.getSelectedItem();                
-                RelationshipEdge edge = new RelationshipEdge(source.getTableName(), target.getTableName(), "", "");
+                edge = new RelationshipEdge(source.getTableName(), target.getTableName(), "", "");
                 graph.addEdge(source, target, edge);
                 
                 EdgeCreatorJDialog edgeDialog = new EdgeCreatorJDialog(null, true);
@@ -815,16 +835,20 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
                 }
             // adição automatica da aresta, ou seja, a aresta é criada com base nos metadados do RDB.
             } else {
-
-                TableVertex source = (TableVertex) cmbSourceVertex.getSelectedItem();
-                TableVertex target = (TableVertex) cmbTargetVertex.getSelectedItem();
-                RelationshipEdge edge = createEdgeFromRDBMetadata(source.getTableName(), target.getTableName());
-
+                edge = createEdgeFromRDBMetadata(source.getTableName(), target.getTableName());
                 graph.addEdge(source, target, edge);
                 edgesArray.add(edge);
                 tblModel_DAGEdges.addRow(new Object[]{source.getName() + "(" + source.getId() + ")", "-->", target.getName() + "(" + target.getId() + ")", "Rem"});
             }
-            loadCollectionMetrics(); // carrega tabela com as métricas da coleção que está sendo criada.
+            
+            // atualizando o tipo de relacionamento de acordo com qual entidade (source ou target) está do lado um.
+            edge.setRelationshipType(source.getTableName().equals(edge.getOneSideEntity()) ? RelationshipEdgeType.EMBED_MANY_TO_ONE : RelationshipEdgeType.EMBED_ONE_TO_MANY);
+            
+            // atualizando os ids dos vértices do relacionamento de aninhamento
+            edge.setOneSideEntityId( source.getTableName().equals(edge.getOneSideEntity()) ? source.getId() : target.getId() );
+            edge.setManySideEntityId( target.getTableName().equals(edge.getOneSideEntity()) ? source.getId() : target.getId() );
+            // carrega tabela com as métricas da coleção que está sendo criada.
+            loadCollectionMetrics(); 
         }
     }//GEN-LAST:event_btnAddEdgeActionPerformed
 
@@ -906,6 +930,10 @@ public class DAGCreatorDialog extends javax.swing.JDialog {
             }
         }
     }//GEN-LAST:event_lstSelectedColumnsKeyPressed
+
+    private void radioEmbedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioEmbedActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_radioEmbedActionPerformed
 
     /**
      * @param args the command line arguments

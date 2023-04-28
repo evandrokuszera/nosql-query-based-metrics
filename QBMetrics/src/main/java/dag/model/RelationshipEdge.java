@@ -13,14 +13,14 @@ import org.jgrapht.graph.DefaultEdge;
  * @author Evandro
  */
 public class RelationshipEdge extends DefaultEdge implements Serializable {
-
     private String typeofNesting;
+    private RelationshipEdgeType relationshipType;
     private String oneSideEntity;
     private String manySideEntity;
     private String pkOneSide;
     private String fkManySide;
-//    private String keySource;
-//    private String keyTarget;
+    private int oneSideEntityId;
+    private int manySideEntityId;
     
     public RelationshipEdge(String oneSideEntity, String manySideEntity, String pkOneSide, String fkManySide) {        
         this.oneSideEntity = oneSideEntity;
@@ -28,24 +28,22 @@ public class RelationshipEdge extends DefaultEdge implements Serializable {
         this.pkOneSide = pkOneSide;
         this.fkManySide = fkManySide;  
     }
-    
 
+    // TODO: excluir este construtor após validações do novo atributo RelationshipeEdgeTypeEnum
     public RelationshipEdge(String typeofNesting, String oneSideEntity, String manySideEntity, String pkOneSide, String fkManySide) {
         this.typeofNesting = typeofNesting;
         this.oneSideEntity = oneSideEntity;
         this.manySideEntity = manySideEntity;
         this.pkOneSide = pkOneSide;
-        this.fkManySide = fkManySide;    
-//        
-//        // Determinando os campos key do vertex source e target conforme indicação do lado 1 e lado muitos.
-//        if (this.getSource().getName().equalsIgnoreCase(oneSideEntity)){
-//            this.keySource = pkOneSide;
-//            this.keyTarget = fkManySide;
-//        } else if (this.getSource().getName().equalsIgnoreCase(manySideEntity)){
-//            this.keySource = fkManySide;
-//            this.keyTarget = pkOneSide;
-//        }
-        
+        this.fkManySide = fkManySide;            
+    }
+    
+    public RelationshipEdge(RelationshipEdgeType typeOfRelationship, String oneSideEntity, String manySideEntity, String pkOneSide, String fkManySide) {
+        this.relationshipType = typeOfRelationship;
+        this.oneSideEntity = oneSideEntity;
+        this.manySideEntity = manySideEntity;
+        this.pkOneSide = pkOneSide;
+        this.fkManySide = fkManySide;            
     }
 
     public String getTypeofNesting() {
@@ -115,11 +113,33 @@ public class RelationshipEdge extends DefaultEdge implements Serializable {
             return fkManySide;            
         }        
     }
+
+    public int getOneSideEntityId() {
+        return oneSideEntityId;
+    }
+
+    public void setOneSideEntityId(int oneSideEntityId) {
+        this.oneSideEntityId = oneSideEntityId;
+    }
+
+    public int getManySideEntityId() {
+        return manySideEntityId;
+    }
+
+    public void setManySideEntityId(int manySideEntityId) {
+        this.manySideEntityId = manySideEntityId;
+    }
+
+    public RelationshipEdgeType getRelationshipType() {
+        return relationshipType;
+    }
+
+    public void setRelationshipType(RelationshipEdgeType relationshipType) {
+        this.relationshipType = relationshipType;
+    }
     
     @Override
     public String toString() {
-        //return "(" + getSource() + " : " + getTarget() + " : " + typeofNesting + ")";
-        
         // Alterei este método para melhor visualização no DAG (interface gráfica).
         String msg = "";
         if (typeofNesting != null) {

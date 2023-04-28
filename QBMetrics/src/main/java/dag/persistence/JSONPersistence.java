@@ -32,9 +32,9 @@ public class JSONPersistence {
             }
             fr.close();            
         } catch (FileNotFoundException ex) {
-            System.out.println(ex);
+            System.out.println("ERROR -> QBMetrics.dag.persistence.JSONPersistence: " + ex);
         } catch (IOException ex) {
-            System.out.println(ex);
+            System.out.println("ERROR -> QBMetrics.dag.persistence.JSONPersistence: " + ex);
         }
         JSONObject json = new JSONObject(jsonText);
         
@@ -50,7 +50,7 @@ public class JSONPersistence {
             obj.write(fw);
             fw.close();
         } catch (IOException ex) {
-            System.out.println(ex);
+            System.out.println("ERROR -> QBMetrics.dag.persistence.JSONPersistence: " + ex);
         }
         
         //System.out.println(obj);
